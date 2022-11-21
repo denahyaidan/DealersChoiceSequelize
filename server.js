@@ -1,8 +1,12 @@
 const Sequelize = require('sequelize');
 const Express = require('express');
+const methodOverride = require('method-override');
 const app = Express();
+app.use(Express.json());
+app.use(Express.urlencoded({ extended: true }));
 const { STRING } = Sequelize;
 const conn = new Sequelize(process.env.DATABASE_URL || 'postgres://localhost/trees');
+app.use(methodOverride('_method'));
 
 const Trees = conn.define('trees', {
   name: {
@@ -38,6 +42,20 @@ app.get('/', async (req, res, next) => {
             </li>`
         }).join('')}
         </ul>
+
+        <h2> Or make your own: </h2>
+        <form method='POST' action='/treeform'>
+        <h3> Name </h3>
+        
+        <Input name='tree'> </Input>
+        
+        <h3> Description </h3>
+
+        <Input name='description'> </Input>
+
+        <button type="submit">Create</button>
+        </form>
+
         </body>
         </html>`)
     }
@@ -46,15 +64,30 @@ app.get('/', async (req, res, next) => {
     }
 })
 
+app.post('/treeform', async (req, res) => {
+    try {
+        const data = req.body
+        const newTree = await Trees.create({
+            name: data.tree,
+            description: data.description
+        });
+        res.redirect('/')
+    } catch (e) {
+        console.log(e)
+    }
+})
+
+
 app.get('/trees/:id', async (req, res, next) => {
     try {
         const SelectedTree = await Trees.findByPk(req.params.id);
-        console.log(SelectedTree);
         res.send(`<html> 
         <head />
         <body> 
-        <h1> ${SelectedTree.name} </h1>
+        <h2> ${SelectedTree.name} </h2>
         <p> ${SelectedTree.description} </p>
+        <INPUT TYPE="button" VALUE="Back" onClick="history.go(-1);">
+
 
         </body>
         </html>`)
